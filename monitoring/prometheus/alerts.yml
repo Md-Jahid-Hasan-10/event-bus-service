@@ -27,3 +27,22 @@ groups:
           severity: critical
         annotations:
           summary: "Kafka broker is not available"
+      - alert: OutboxBacklog
+        expr: outbox_pending_events > 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.application }} has {{ $value }} events waiting to be published to Kafka"
+
+      - alert: DeadLettersPresent
+        expr: |
+          sum by (topic) (
+            kafka_topic_partition_current_offset{topic=~".*\\.DLT"}
+            - kafka_topic_partition_oldest_offset{topic=~".*\\.DLT"}
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} message(s) are waiting in {{ $labels.topic }}"
