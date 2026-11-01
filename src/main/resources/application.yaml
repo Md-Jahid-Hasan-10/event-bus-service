@@ -20,11 +20,16 @@ eureka:
     prefer-ip-address: true
 
 management:
+  server:
+    port: 18083
   endpoints:
     web:
       exposure:
-        include: health,info
-
+        include: health,info,prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 app:
   kafka:
     replication-factor: 1
