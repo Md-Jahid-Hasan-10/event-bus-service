@@ -46,3 +46,32 @@ groups:
           severity: warning
         annotations:
           summary: "{{ $value }} message(s) are waiting in {{ $labels.topic }}"
+      - alert: TransitBalanceStuck
+        expr: cbs_transit_balance > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} has been in the transit account for more than 10 minutes. A transfer may be stuck"
+      - alert: AccountsStuckPending
+        expr: accounts_pending > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} account(s) have waited more than 10 minutes for the ledger"
+      - alert: TransferNeedsReconciliation
+        expr: transfers_in_flight{status="RECONCILIATION_REQUIRED"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value }} transfer(s) need reconciliation, money may be in transit"
+
+      - alert: TransfersStuckInMotion
+        expr: sum(transfers_in_flight{status=~"WITHDRAWING|DEPOSITING|REVERSING"}) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} transfer(s) have been moving money for more than 5 minutes"
