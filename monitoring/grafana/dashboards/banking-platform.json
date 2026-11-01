@@ -1,0 +1,235 @@
+{
+  "uid": "banking-platform",
+  "title": "Banking - Platform overview",
+  "tags": ["banking"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Services up (of 10)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 10,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 8 },
+              { "color": "green", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(up{job=\"banking-services\"})", "instant": true }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Services down",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        { "refId": "A", "expr": "count(up{job=\"banking-services\"} == 0) or vector(0)", "instant": true }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Kafka brokers",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        { "refId": "A", "expr": "max(kafka_brokers) or vector(0)", "instant": true }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Kafka topics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        { "refId": "A", "expr": "count(kafka_topic_partitions) or vector(0)", "instant": true }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Service up (1 = up, 0 = down)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "up{job=\"banking-services\"}", "legendFormat": "{{application}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "HTTP requests per second",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (application) (rate(http_server_requests_seconds_count[1m]))",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "HTTP 5xx errors per second",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (application) (rate(http_server_requests_seconds_count{status=~\"5..\"}[1m]))",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "HTTP latency p95",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, application) (rate(http_server_requests_seconds_bucket[5m])))",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "JVM heap used",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (application) (jvm_memory_used_bytes{area=\"heap\"}) / sum by (application) (jvm_memory_max_bytes{area=\"heap\"})",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Process CPU",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_cpu_usage{job=\"banking-services\"}",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Kafka messages produced per second",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (topic) (rate(kafka_topic_partition_current_offset[1m]))",
+          "legendFormat": "{{topic}}"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Kafka consumer lag (messages waiting)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (consumergroup, topic) (kafka_consumergroup_lag)",
+          "legendFormat": "{{consumergroup}} / {{topic}}"
+        }
+      ]
+    }
+  ]
+}

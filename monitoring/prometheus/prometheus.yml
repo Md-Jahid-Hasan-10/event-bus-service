@@ -1,0 +1,49 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: banking-services
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:18761"]
+        labels:
+          application: discovery-service
+      - targets: ["host.docker.internal:18080"]
+        labels:
+          application: api-gateway
+      - targets: ["host.docker.internal:18081"]
+        labels:
+          application: account-service
+      - targets: ["host.docker.internal:18082"]
+        labels:
+          application: fund-transfer-service
+      - targets: ["host.docker.internal:18083"]
+        labels:
+          application: user-service
+      - targets: ["host.docker.internal:18084"]
+        labels:
+          application: core-banking-service
+      - targets: ["host.docker.internal:18085"]
+        labels:
+          application: charge-fee-service
+      - targets: ["host.docker.internal:18086"]
+        labels:
+          application: otp-service
+      - targets: ["host.docker.internal:18087"]
+        labels:
+          application: notification-service
+      - targets: ["host.docker.internal:18090"]
+        labels:
+          application: event-bus-service
+
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
