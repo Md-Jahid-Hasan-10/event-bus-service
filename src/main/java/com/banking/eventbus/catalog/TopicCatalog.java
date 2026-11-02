@@ -31,13 +31,19 @@ public class TopicCatalog {
                 "Facts from Charge Fee Service: FeeCalculated");
         addWithDeadLetter(list, TopicNames.OTP_COMMANDS, TopicKind.COMMANDS, 7 * DAY, 14 * DAY,
                 "Commands to OTP Service: IssueOtp");
-        // Short retention on purpose: the OTP is only valid for five minutes.
-        addWithDeadLetter(list, TopicNames.OTP_EVENTS, TopicKind.EVENTS, 10 * MINUTE, HOUR,
+        // The retention has to cover the delivery of the OTP, not only its
+        // lifetime. An OTP is valid for five minutes, but the event has to
+        // survive a notification service that is down for a while, plus the
+        // retries. Ten minutes was too short: the event was gone while the
+        // user was still waiting for the code, and the transfer stayed in
+        // OTP_PENDING until the saga timeout fired.
+        addWithDeadLetter(list, TopicNames.OTP_EVENTS, TopicKind.EVENTS, 2 * HOUR, 4 * HOUR,
                 "Facts from OTP Service: OtpIssued (the code is encrypted)");
         addWithDeadLetter(list, TopicNames.CBS_COMMANDS, TopicKind.COMMANDS, 7 * DAY, 14 * DAY,
-                "Commands to Core Banking: CreateLedgerAccount, Withdraw, Deposit, Reversal");
+                "Commands to Core Banking: CreateLedgerAccount, CheckBalance, Withdraw, Deposit, Reversal");
         addWithDeadLetter(list, TopicNames.CBS_EVENTS, TopicKind.EVENTS, 7 * DAY, 14 * DAY,
-                "Facts from Core Banking: LedgerAccountCreated, WithdrawCompleted, WithdrawFailed, "
+                "Facts from Core Banking: LedgerAccountCreated, BalanceChecked, BalanceRejected, "
+                        + "WithdrawCompleted, WithdrawFailed, "
                         + "DepositCompleted, DepositFailed, ReversalCompleted, ReversalFailed");
         addWithDeadLetter(list, TopicNames.TRANSFER_EVENTS, TopicKind.EVENTS, 7 * DAY, 14 * DAY,
                 "Facts from Fund Transfer: TransferCompleted, TransferFailed, TransferReversed, "

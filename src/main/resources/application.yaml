@@ -21,7 +21,7 @@ eureka:
 
 management:
   server:
-    port: 18083
+    port: 18090
   endpoints:
     web:
       exposure:
