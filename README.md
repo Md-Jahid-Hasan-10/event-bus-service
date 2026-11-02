@@ -546,3 +546,11 @@ curl -s http://localhost:18090/actuator/prometheus | head
   `spring-boot-starter-web`, `spring-boot-starter-actuator`, `micrometer-registry-prometheus`,
   `spring-kafka`, `spring-cloud-starter-netflix-eureka-client`, `spring-boot-starter-test`.
   Spring Boot 3.5.5, Spring Cloud BOM 2025.0.0, Java 17.
+
+# event-bus-service
+
+**Author:** [Jahid Hasan](https://github.com/Md-Jahid-Hasan-10)
+
+**Project:** Banking Microservices
+
+> Owns the Kafka topic topology of the platform: on startup it creates all 22 topics (11 business topics plus 11 `.DLT` dead-letter topics) with the right partitions, replication factor and retention, and it exposes a small inspection API under `/internal/events`. Public port **8090**, actuator port **18090**.
