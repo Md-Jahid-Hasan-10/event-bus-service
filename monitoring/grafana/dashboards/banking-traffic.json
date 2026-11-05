@@ -1,0 +1,184 @@
+{
+  "uid": "banking-traffic",
+  "title": "Banking - API and message traffic",
+  "tags": ["banking"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service", "label": "Service", "type": "custom",
+        "query": "api-gateway,account-service,fund-transfer-service,user-service,core-banking-service,charge-fee-service,otp-service,notification-service",
+        "includeAll": true, "allValue": ".+", "multi": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "options": []
+      },
+      { "name": "transferId", "label": "Transfer id (TXN-...)", "type": "textbox", "query": "", "current": { "text": "", "value": "" } },
+      { "name": "traceId", "label": "Trace id", "type": "textbox", "query": "", "current": { "text": "", "value": "" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "API calls (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(api_calls_seconds_count[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "API failures (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(api_calls_seconds_count{outcome=~\"server_error|exception\"}[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Messages consumed (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(kafka_consume_seconds_count[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Messages that failed (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(kafka_consume_seconds_count{outcome=\"error\"}[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Events published (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(kafka_published_total[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Failed calls to other services (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(client_calls_seconds_count{outcome=\"error\"}[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "API calls per minute (by service)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (application) (rate(api_calls_seconds_count[5m])) * 60", "legendFormat": "{{application}}" } ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "API calls per minute (by outcome)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (outcome) (rate(api_calls_seconds_count[5m])) * 60", "legendFormat": "{{outcome}}" } ]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "API latency, 95th percentile (by service)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, application) (rate(api_calls_seconds_bucket[5m])))", "legendFormat": "{{application}}" } ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Slowest API operations, 95th percentile (top 8)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "topk(8, histogram_quantile(0.95, sum by (le, application, operation) (rate(api_calls_seconds_bucket[5m]))))", "legendFormat": "{{application}} {{operation}}" } ]
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Messages consumed per minute (by topic)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (topic) (rate(kafka_consume_seconds_count[5m])) * 60", "legendFormat": "{{topic}}" } ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Message handling time, 95th percentile (by topic)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, topic) (rate(kafka_consume_seconds_bucket[5m])))", "legendFormat": "{{topic}}" } ]
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "Events published per minute (by topic and type)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (topic, eventType) (rate(kafka_published_total[5m])) * 60", "legendFormat": "{{topic}} {{eventType}}" } ]
+    },
+    {
+      "id": 14, "type": "timeseries", "title": "Messages that failed per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (application, topic, eventType) (rate(kafka_consume_seconds_count{outcome=\"error\"}[5m])) * 60", "legendFormat": "{{application}} {{topic}} {{eventType}}" } ]
+    },
+    {
+      "id": 15, "type": "timeseries", "title": "Calls to other services per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (application, target, outcome) (rate(client_calls_seconds_count[5m])) * 60", "legendFormat": "{{application}} to {{target}} ({{outcome}})" } ]
+    },
+    {
+      "id": 16, "type": "timeseries", "title": "Calls to other services, 95th percentile",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, application, target) (rate(client_calls_seconds_bucket[5m])))", "legendFormat": "{{application}} to {{target}}" } ]
+    },
+    {
+      "id": 17, "type": "timeseries", "title": "Gateway requests per minute (by route and status)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (route, status) (rate(gateway_requests_seconds_count[5m])) * 60", "legendFormat": "{{route}} {{status}}" } ]
+    },
+    {
+      "id": 18, "type": "timeseries", "title": "Gateway latency, 95th percentile (by route)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, route) (rate(gateway_requests_seconds_bucket[5m])))", "legendFormat": "{{route}}" } ]
+    },
+    {
+      "id": 19, "type": "logs", "title": "API requests and responses (filter by service, transfer id, or trace id)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 52 },
+      "options": { "showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [ { "refId": "A", "queryType": "range", "expr": "{service=~\"$service\"} |= \"$transferId\" |= \"$traceId\" | json | event=~\"http.request|gateway.request\"", "maxLines": 200 } ]
+    },
+    {
+      "id": 20, "type": "logs", "title": "Kafka messages consumed and published",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 64 },
+      "options": { "showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [ { "refId": "A", "queryType": "range", "expr": "{service=~\"$service\"} |= \"$transferId\" |= \"$traceId\" | json | event=~\"kafka.consume|kafka.publish\"", "maxLines": 200 } ]
+    },
+    {
+      "id": 21, "type": "logs", "title": "Calls to other services",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 76 },
+      "options": { "showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [ { "refId": "A", "queryType": "range", "expr": "{service=~\"$service\"} |= \"$transferId\" |= \"$traceId\" | json | event=\"client.call\"", "maxLines": 200 } ]
+    },
+    {
+      "id": 22, "type": "logs", "title": "Slow (over 1 second) or failed",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 86 },
+      "options": { "showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [ { "refId": "A", "queryType": "range", "expr": "{service=~\"$service\"} |= \"$transferId\" |= \"$traceId\" | json | event=~\"http.request|gateway.request|kafka.consume|client.call\" | durationMs > 1000 or outcome=~\"server_error|exception|error\"", "maxLines": 100 } ]
+    }
+  ]
+}

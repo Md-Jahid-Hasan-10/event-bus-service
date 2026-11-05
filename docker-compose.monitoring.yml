@@ -26,6 +26,50 @@ services:
     depends_on:
       - kafka-exporter
 
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: banking-loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./monitoring/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki_data:/loki
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: banking-tempo
+    restart: unless-stopped
+    # Development only: a new volume is owned by root, and Tempo needs to write to it.
+    user: root
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    ports:
+      - "127.0.0.1:3200:3200"   # Tempo HTTP API
+      - "127.0.0.1:4317:4317"   # OTLP gRPC, used by the services in S2
+      - "127.0.0.1:4318:4318"   # OTLP HTTP, used by the services in S2
+    volumes:
+      - ./monitoring/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+
+  alloy:
+    image: grafana/alloy:v1.8.2
+    container_name: banking-alloy
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - "127.0.0.1:12345:12345"
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ${HOME}/banking-logs:/banking-logs:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
+
   grafana:
     image: grafana/grafana:11.6.0
     container_name: banking-grafana
@@ -34,7 +78,7 @@ services:
       - "127.0.0.1:3001:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?grafana2188}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-grafana2188}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafana_data:/var/lib/grafana
@@ -42,7 +86,12 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - loki
+      - tempo
 
 volumes:
   prometheus_data:
   grafana_data:
+  loki_data:
+  tempo_data:
+  alloy_data:

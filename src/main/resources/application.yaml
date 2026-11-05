@@ -33,3 +33,18 @@ management:
 app:
   kafka:
     replication-factor: 1
+
+logging:
+  structured:
+    format:
+      file: logstash
+    json:
+      add:
+        service: ${spring.application.name}
+  file:
+    name: ${BANKING_LOG_DIR:${user.home}/banking-logs}/${spring.application.name}.json
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 3
+      total-size-cap: 200MB

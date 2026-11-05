@@ -75,3 +75,36 @@ groups:
           severity: warning
         annotations:
           summary: "{{ $value }} transfer(s) have been moving money for more than 5 minutes"
+
+  - name: communication
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: max by (application, name) (resilience4j_circuitbreaker_state{state="open"}) == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.application }}: the circuit to {{ $labels.name }} has been open for a minute. Is that service down?"
+
+      - alert: DownstreamTimeoutsFrequent
+        expr: sum by (application, target) (rate(client_calls_seconds_count{exception="DownstreamTimeoutException"}[5m])) * 60 > 3
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.application }} gets more than 3 timeouts per minute from {{ $labels.target }}"
+
+      - alert: EmailPermanentFailure
+        expr: sum(increase(notifications_email_failures_total{kind="permanent"}[10m])) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Emails fail for good (wrong Gmail password or a refused address). Retrying will not help"
+
+      - alert: BalancesDegraded
+        expr: sum(increase(accounts_balances_degraded_total[5m])) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Customers see accounts without balances. Core Banking is not answering"

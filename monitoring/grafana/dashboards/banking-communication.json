@@ -1,0 +1,133 @@
+{
+  "uid": "banking-communication",
+  "title": "Banking - Service communication",
+  "tags": ["banking"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Circuits open now",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "count(resilience4j_circuitbreaker_state{state=\"open\"} == 1) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Calls refused by open circuits (1h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(resilience4j_circuitbreaker_not_permitted_calls_total[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Timeouts (1h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(client_calls_seconds_count{exception=\"DownstreamTimeoutException\"}[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Retries that rescued a call (1h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(resilience4j_retry_calls_total{kind=\"successful_with_retry\"}[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Degraded balance answers (1h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(accounts_balances_degraded_total[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Permanent email failures (1h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "expr": "sum(increase(notifications_email_failures_total{kind=\"permanent\"}[1h])) or vector(0)", "instant": true } ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Circuit state (1 = open, 0.5 = half open)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "max by (application, name) (resilience4j_circuitbreaker_state{state=\"open\"})", "legendFormat": "{{application}} {{name}} open" },
+        { "refId": "B", "expr": "max by (application, name) (resilience4j_circuitbreaker_state{state=\"half_open\"}) * 0.5", "legendFormat": "{{application}} {{name}} half open" }
+      ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Calls through the circuit per minute (by result)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (application, name, kind) (rate(resilience4j_circuitbreaker_calls_seconds_count[5m])) * 60", "legendFormat": "{{application}} {{name}} {{kind}}" } ]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Failure rate seen by the circuit (%)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "resilience4j_circuitbreaker_failure_rate >= 0", "legendFormat": "{{application}} {{name}}" } ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Retry results per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (application, name, kind) (rate(resilience4j_retry_calls_total[5m])) * 60", "legendFormat": "{{application}} {{name}} {{kind}}" } ]
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Failed calls to other services per minute (by exception)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (application, target, exception) (rate(client_calls_seconds_count{outcome=\"error\"}[5m])) * 60", "legendFormat": "{{application}} to {{target}}: {{exception}}" } ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Degraded balance answers per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (reason) (rate(accounts_balances_degraded_total[5m])) * 60", "legendFormat": "{{reason}}" } ]
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "Email failures per minute (temporary or permanent)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (type, kind) (rate(notifications_email_failures_total[5m])) * 60", "legendFormat": "{{type}} ({{kind}})" } ]
+    },
+    {
+      "id": 14, "type": "timeseries", "title": "Gateway 5xx per minute (by route)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0 }, "overrides": [] },
+      "targets": [ { "refId": "A", "expr": "sum by (route, status) (rate(gateway_requests_seconds_count{status=~\"5..\"}[5m])) * 60", "legendFormat": "{{route}} {{status}}" } ]
+    },
+    {
+      "id": 15, "type": "logs", "title": "Failed calls to other services",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 36 },
+      "options": { "showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [ { "refId": "A", "queryType": "range", "expr": "{service=~\".+\"} | json | event=\"client.call\" | outcome=\"error\"", "maxLines": 100 } ]
+    },
+    {
+      "id": 16, "type": "logs", "title": "Gateway failures",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 46 },
+      "options": { "showTime": true, "showLabels": false, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [ { "refId": "A", "queryType": "range", "expr": "{service=\"api-gateway\"} | json | event=\"gateway.request\" | httpStatus=~\"5..\"", "maxLines": 100 } ]
+    }
+  ]
+}

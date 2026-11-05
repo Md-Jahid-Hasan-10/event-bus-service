@@ -1,0 +1,52 @@
+// Reads the JSON log files of every service and sends them to Loki.
+
+local.file_match "banking" {
+  path_targets = [{"__path__" = "/banking-logs/*.json"}]
+  sync_period  = "5s"
+}
+
+// The label "service" is the file name without ".json" (= the application name).
+discovery.relabel "banking" {
+  targets = local.file_match.banking.targets
+
+  rule {
+    source_labels = ["__path__"]
+    regex         = ".*/([^/]+)\\.json"
+    target_label  = "service"
+    replacement   = "$1"
+  }
+}
+
+loki.source.file "banking" {
+  targets    = discovery.relabel.banking.output
+  forward_to = [loki.process.banking.receiver]
+}
+
+loki.process "banking" {
+  // Only "level" becomes a label. traceId, spanId and transferId stay in the line.
+  stage.json {
+    expressions = {
+      level = "level",
+      ts    = "\"@timestamp\"",
+    }
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
+
+  stage.timestamp {
+    source = "ts"
+    format = "RFC3339Nano"
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

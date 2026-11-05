@@ -1,0 +1,51 @@
+{
+  "uid": "banking-traces",
+  "title": "Banking - Traces",
+  "tags": ["banking"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      { "name": "transferId", "label": "Transfer id (TXN-...)", "type": "textbox", "query": "", "current": { "text": "", "value": "" } }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "table", "title": "Traces of this transfer (type the id above)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [ { "refId": "A", "queryType": "traceql", "query": "{ span.transferId = \"$transferId\" }", "limit": 20, "tableType": "traces" } ]
+    },
+    {
+      "id": 2, "type": "table", "title": "Recent traces with errors",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [ { "refId": "A", "queryType": "traceql", "query": "{ status = error }", "limit": 20, "tableType": "traces" } ]
+    },
+    {
+      "id": 3, "type": "table", "title": "Slow traces (over 3 seconds)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [ { "refId": "A", "queryType": "traceql", "query": "{ duration > 3s }", "limit": 20, "tableType": "traces" } ]
+    },
+    {
+      "id": 4, "type": "table", "title": "Latest traces through Core Banking",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [ { "refId": "A", "queryType": "traceql", "query": "{ resource.service.name = \"core-banking-service\" }", "limit": 20, "tableType": "traces" } ]
+    },
+    {
+      "id": 5, "type": "table", "title": "Latest traces of the gateway (all requests)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [ { "refId": "A", "queryType": "traceql", "query": "{ resource.service.name = \"api-gateway\" }", "limit": 20, "tableType": "traces" } ]
+    }
+  ]
+}
